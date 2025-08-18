@@ -13,14 +13,11 @@ A comprehensive resume builder application that allows users to **create, edit, 
 - 📱 **Fully Responsive** design
 - 📄 **PDF Export** functionality
 - ⚡ **Lightning Fast** performance with Vite
-
-## 🔗 Connected Strapi Backend Repo
-👉 [Strapi Backend Repository](https://github.com/fldvlpr/react-ai-builder-strapi-admin)
-<br/>
+- 🗄️ **Supabase Database** for reliable data storage
 
 ## 🚀 Live Demo
 Check out the live application:
-👉 [Visit AI Resume Builder Here](https://tg-react-ai-resume-builder.netlify.app/) 
+👉 [Visit AI Resume Builder Here](https://tg-react-supabase-ai-resume-builder.netlify.app/) 
 <br/>
 
 ## 📱 Web Preview
@@ -38,8 +35,8 @@ Check out the live application:
 
 1. **Clone this repository:**
    ```bash
-   git clone https://github.com/fldvlpr/react-ai-resume-builder-app.git
-   cd react-ai-resume-builder-app
+   git clone https://github.com/ToastguyzWeb/react-js-supabase-ai-resume-builder-app.git
+   cd react-js-supabase-ai-resume-builder-app
    ```
 
 2. **Install Dependencies**
@@ -54,9 +51,9 @@ Check out the live application:
    # Clerk Authentication
    VITE_CLERK_PUBLISHABLE_KEY=<your_clerk_publishable_key>
    
-   # Strapi Backend
-   VITE_STRAPI_API_KEY=<your_strapi_api_key>
-   VITE_BASE_URL=<your_web_host_url>
+   # Supabase Configuration
+   VITE_SUPABASE_URL=<your_supabase_project_url>
+   VITE_SUPABASE_ANON_KEY=<your_supabase_anon_key>
    
    # AI Service
    VITE_GOOGLE_AI_API_KEY=<your_google_gemini_api_key>
@@ -70,3 +67,74 @@ Check out the live application:
    ```bash
    npm run dev
    ```
+
+## 🗄️ Database Setup
+This application uses Supabase as the backend database. After creating your Supabase project, follow these steps:
+
+### Step 1: Create Database Tables
+Based on your application requirements, create these tables in Supabase SQL Editor:
+
+```sql
+-- Create user_resumes table
+CREATE TABLE user_resumes (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  resume_id UUID NOT NULL UNIQUE,
+  user_email VARCHAR(255) NOT NULL,
+  user_name VARCHAR(255),
+  theme_color VARCHAR(7) DEFAULT '#FF5733',
+  first_name VARCHAR(100),
+  last_name VARCHAR(100),
+  job_title VARCHAR(255),
+  address TEXT,
+  phone VARCHAR(20),
+  email VARCHAR(255),
+  summary TEXT,
+  experience JSONB DEFAULT '[]'::jsonb,
+  education JSONB DEFAULT '[]'::jsonb,
+  skills JSONB DEFAULT '[]'::jsonb,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create RLS (Row Level Security) policies
+ALTER TABLE user_resumes ENABLE ROW LEVEL SECURITY;
+
+-- Policy to allow users to see only their own resumes
+CREATE POLICY "Users can view own resumes" ON user_resumes
+  FOR SELECT USING (auth.jwt() ->> 'email' = user_email);
+
+-- Policy to allow users to insert their own resumes
+CREATE POLICY "Users can insert own resumes" ON user_resumes
+  FOR INSERT WITH CHECK (auth.jwt() ->> 'email' = user_email);
+
+-- Policy to allow users to update their own resumes
+CREATE POLICY "Users can update own resumes" ON user_resumes
+  FOR UPDATE USING (auth.jwt() ->> 'email' = user_email);
+
+-- Policy to allow users to delete their own resumes
+CREATE POLICY "Users can delete own resumes" ON user_resumes
+  FOR DELETE USING (auth.jwt() ->> 'email' = user_email);
+
+-- Create updated_at trigger
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$ language 'plpgsql';
+
+CREATE TRIGGER update_user_resumes_updated_at 
+  BEFORE UPDATE ON user_resumes 
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+```
+
+### Step 2: Handle RLS (Row Level Security)
+Since you're using Clerk for authentication and not Supabase Auth, you can **disable RLS security** in **Supabase project SQL Editor**.
+
+**Disable RLS (Simpler, Less Secure)**
+Run this in your Supabase SQL Editor:
+```sql
+ALTER TABLE user_resumes DISABLE ROW LEVEL SECURITY;
+```
