@@ -138,3 +138,5 @@ Run this in your Supabase SQL Editor:
 ```sql
 ALTER TABLE user_resumes DISABLE ROW LEVEL SECURITY;
 ```
+
+*Built with ❤️ using React and TailwindCSS by **[Toastguyz Team](https://in.linkedin.com/company/toastguyz)***
